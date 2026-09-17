@@ -12,6 +12,7 @@ param(
     [ValidateRange(1,3600)][int]$TimeoutSeconds = 240,
     [ValidateRange(0,120)][int]$SettleSeconds = 25,
     [switch]$ColdBoot,
+    [switch]$Headless,
     [switch]$KeepOnFailure,
     [switch]$DryRun,
     [string]$SdkRoot, [string]$JavaHome, [string]$AvdHome
@@ -22,7 +23,7 @@ $ErrorActionPreference = 'Stop'
 if (-not $Matrix) { $Matrix = Join-Path (Get-FleetRepoRoot) 'config/fleet-matrix.json' }
 if (-not $SummaryPath) { $SummaryPath = Join-Path (Get-FleetRepoRoot) 'artifacts/fleet-latest.json' }
 $targets = @(Select-FleetAvds -Matrix (Get-FleetMatrix -Path $Matrix) -Only $Only)
-if ($DryRun) { [pscustomobject]@{ action='start'; matrix=$Matrix; names=@($targets.name) } | ConvertTo-Json -Depth 4; return }
+if ($DryRun) { [pscustomobject]@{ action='start'; matrix=$Matrix; names=@($targets.name); headless=[bool]$Headless } | ConvertTo-Json -Depth 4; return }
 
 $tools   = Get-FleetTools -SdkRoot $SdkRoot -JavaHome $JavaHome -AvdHome $AvdHome
 $gpuHelp = Invoke-FleetNative -Exe $tools.Emulator -Arguments @('-help-gpu')
@@ -53,6 +54,7 @@ function Start-OneEmulator($a) {
     New-Item -ItemType Directory -Path $dir -Force | Out-Null
     $emuArgs = @('-avd', $a.name, '-port', "$($a.port)", '-gpu', $a.gpu, '-no-boot-anim', '-netdelay', 'none', '-netspeed', 'full', '-crash-report-mode', 'never')
     if ($ColdBoot) { $emuArgs += '-no-snapshot-load' }
+    if ($Headless) { $emuArgs += '-no-window' }
     foreach ($f in @($a.features)) { if ($f) { $emuArgs += @('-feature', $f) } }
     foreach ($x in @($a.extraArgs)) { if ($x) { $emuArgs += $x } }
     Set-Content (Join-Path $dir 'command.txt') ("`"{0}`" {1}" -f $tools.Emulator, ($emuArgs -join ' '))
@@ -69,6 +71,7 @@ function Wait-OneEmulator($h) {
     $a = $h.avd; $dir = $h.dir; $adb = $tools.Adb
     $res = [ordered]@{
         name = $a.name; serial = $a.serial; port = $a.port; image = $a.image; gpu = $a.gpu
+        headless = [bool]$Headless
         features = @($a.features); pid = $h.pid; booted = $false; avdNameVerified = $false
         displayOk = $false; surfaceFlingerAssert = $false; gmsVersion = ''; gsfIdHex = ''
         fingerprint = ''; abilist = ''; status = 'unknown'; artifacts = $dir; stop = ''

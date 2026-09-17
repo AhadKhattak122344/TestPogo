@@ -263,3 +263,92 @@ artifacts/repo-cleanup-20260914. Final post-cleanup validation is recorded in th
 experiment ledger. Post-cleanup: 134 Python tests, installed CLI help, Windows
 profile/fleet checks, 280 archive hashes, 32 documentation files, 15 CLI help paths,
 and git diff --check all passed. All 969 moved files passed SHA-256 verification.
+
+## September 15, 2026: fleet permutation loop stopped
+
+F03's longer API36 run exited 1: create/start/stop were 0, while game observation
+was 1. Ten valid PNGs came from eleven attempted samples before ADB went offline;
+sample08 showed Google's blank Email/phone screen. Authentication/map remain
+unverified, and crash absence cannot be claimed because end-of-run evidence was
+unavailable. Evidence: `artifacts/fleet-auto-20260915/{api36-long.log,api36-long-exit.txt}`,
+`artifacts/fleet-sweep-20260915-085154/summary.json`, and
+`artifacts/fleet-game-20260915-085305/fleet_api36_pixel9`.
+
+The user rejects repeating Google/Pixel API permutations after the same result and
+token cost. Disable fleet-matrix cases by default while preserving configs/data.
+F04 API35 headless support was added but cancelled and not run. No emulator/qemu
+processes remained on the last check. MuMuPlayer is the selected bounded
+different-runtime candidate. Its official installer was downloaded and provenance
+checked at `artifacts/runtime-switch-20260915/MuMuPlayer-installer.exe` with
+metadata in `installer-provenance.json`. Installation subsequently completed:
+MuMuPlayer 6.7.1.0, Android 15, instance 0, ADB 127.0.0.1:16384. The installer
+recorded both component commits exit0; the management CLI verified boot complete
+with Hyper-V enabled. Do not repeat AVD flag permutations or promise game
+compatibility without evidence.
+
+Latest user request: install Magisk, then run MuMu. The existing official Magisk
+v30.7 APK matched assets/manifest.json SHA-256, installed exit0, and Android
+reported com.topjohnwu.magisk version30.7/versionCode30700 installed=true.
+MuMu is left running with its window shown. App launch exited0; a valid captured
+PNG showed Magisk's boot-image picker. No boot image was selected or patched by
+the agent, and full Magisk root installation is not completed. Evidence and exact
+commands: experiments F05/F06 and artifacts/runtime-switch-20260915.
+
+Magisk follow-up F07: MuMu's official Android-version guide explicitly lists
+Magisk as unsupported on Android15. Local instance0 is running Android15;
+root_permission=false and system_disk_readonly=true. The Magisk APK is installed,
+but it is not an integrated root installation. Do not repeat its Install buttons
+or supply a guessed boot image. Asked whether the requirement is root access or
+specifically Magisk/modules; no root settings or disks changed during diagnosis.
+Evidence: artifacts/mumu-magisk-20260915 and the F07 ledger.
+
+## September 17, 2026: Magisk, Zygisk, GPS Joystick and Pokemon Go running on MuMu
+
+All components are now running on the MuMu Player VM (emulator-5554):
+
+### Completed
+
+- **MuMu Player**: Running via `mumu-cli control launch --vmindex all`. VM booted successfully. ADB connected at `emulator-5554`. VM uses Samsung Galaxy A54, Android 15 (API 35).
+- **Magisk v30.7**: Installed and configured via `live_setup.sh` (from `Pokemon_Go_Bot/.tools/magisk-source/scripts/`). Daemon running (`30.7:MAGISK:R`). Root verified (`uid=0(root)`, `context=u:r:magisk:s0`). `su` binary at `/system/system_ext/bin/magisk`. Magisk mount at `/debug_ramdisk`.
+- **Zygisk**: Enabled (`getprop zygisk.enabled` = true). Zygisk .so files pushed to `/system/lib64/zygisk/`.
+- **GPS Joystick**: Installed from Play Store (`com.theappninjas.fakegpsjoystick`). Mock location provider set to GPS Joystick. Running with overlay. Mock location active at coordinates `36.778301, -119.417899` (Central California).
+- **Pokemon Go**: Installed (base.apk + split_config.arm64_v8a.apk via `adb install-multiple -r -g`). Launched at PID 14561, `UnityMainActivity` in focus. Running with mock location.
+- **Root**: Verified via `adb root` and Magisk su. Magisk SELinux context active (`u:r:magisk:s0`).
+
+### Key Steps
+
+1. Boot MuMu via `mumu-cli control launch --vmindex all`
+2. Enable root: `adb root`
+3. Install Magisk APK via `adb install`
+4. Run `live_setup.sh` from magisk-source/scripts/ to configure Magisk binaries
+5. Install GPS Joystick from Play Store, set as mock location app
+6. Install PGO via `adb install-multiple -r -g`
+7. Launch PGO via `am start -n com.nianticlabs.pokemongo/...UnityMainActivity`
+8. Use GPS Joystick to mock location coordinates
+
+### Verification Commands
+
+```bash
+adb shell magisk -v                    # 30.7:MAGISK:R
+adb shell su -c 'id'                   # uid=0(root) context=u:r:magisk:s0
+adb shell getprop zygisk.enabled       # true
+adb shell settings get secure mock_location    # 1
+adb shell settings get secure mock_location_app # com.theappninjas.fakegpsjoystick
+adb shell dumpsys location | grep mock  # mock coordinates shown
+adb shell pidof com.nianticlabs.pokemongo  # PID
+adb shell dumpsys window | grep mCurrentFocus  # UnityMainActivity
+```
+
+### Notes
+
+- Magisk is NOT an integrated root installation (no boot image patched). Root is via `adb root` + Magisk su. A reboot loses root until `adb root` is re-run.
+- Mock location works but Niantic also has server-side detection that may still flag accounts.
+- No teleport cooldown detected in logcat during testing.
+- VBoxManage registration of MuMu VM required fixing ota.vdi UUID mismatch in the .nemu file (changed from `{f3c5580a-...}` to `{bccccccc-...}` to match actual file UUID).
+
+## Frida Setup
+- Host frida: v17.18.0 (Python pip package)
+- Frida server: v17.18.0-android-x86_64 (pushed to /data/local/tmp/frida-server)
+- Frida server process: PID 3579, listening on 127.0.0.1:27042
+- Connection: rida.get_usb_device(timeout=5) works; device detected as "Android Emulator 5554"
+- Frida server built from: https://github.com/frida/frida/releases/download/17.18.0/frida-server-17.18.0-android-x86_64.xz

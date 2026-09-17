@@ -1,0 +1,58 @@
+<domain type='kvm'>
+  <name>{{ name }}</name>
+  <memory unit='MiB'>{{ memory_mb }}</memory>
+  <vcpu>{{ vcpus }}</vcpu>
+
+  <os>
+    <type arch='aarch64' machine='virt-7.2'>hvm</type>
+    <loader readonly='yes' type='pflash'>/usr/share/AAVMF/AAVMF_CODE.fd</loader>
+    <nvram>/var/lib/libvirt/qemu/nvram/{{ name }}_VARS.fd</nvram>
+  </os>
+
+  <features>
+    <acpi/>
+    <gic version='3'/>
+  </features>
+
+  <cpu mode='host-passthrough'>
+    <topology sockets='1' dies='1' clusters='1' cores='{{ vcpus }}' threads='1'/>
+    <feature policy='require' name='aes'/>
+    <feature policy='require' name='sha2'/>
+    <feature policy='require' name='pmull'/>
+  </cpu>
+
+  <devices>
+    <disk type='file' device='disk'>
+      <driver name='qemu' type='qcow2' cache='writeback'/>
+      <source file='{{ disk_path }}'/>
+      <target dev='vda' bus='virtio'/>
+    </disk>
+
+    <interface type='bridge'>
+      <source bridge='br0'/>
+      <model type='virtio'/>
+      <mac address='{{ mac }}'/>
+    </interface>
+
+    <controller type='virtio-serial' index='0'>
+      <address type='virtio-mmio'/>
+    </controller>
+
+    <hostdev mode='subsystem' type='misc' managed='yes'>
+      <source>
+        <char>{{ tee_device }}</char>
+      </source>
+      <address type='virtio-serial' controller='0' bus='0' port='1'/>
+    </hostdev>
+
+    <video>
+      <model type='virtio' heads='1' primary='yes'>
+        <acceleration accel3d='no'/>
+      </model>
+    </video>
+
+    <serial type='pty'>
+      <target type='system-serial' port='0'/>
+    </serial>
+  </devices>
+</domain>

@@ -49,7 +49,21 @@ Symptoms: ADB remained offline through the bounded startup window.
 
 Evidence: L22.
 
-Alternative: the planned L23 comparison changes only API37 GPU mode to software.
+Follow-up L23/L24 software tests and F02 swangle tests also failed display
+validation. New renderer/image/runtime evidence is required before another attempt.
+
+## API37 swangle with DMA/Vulkan controls disabled
+
+F02 reached boot completion but failed PNG display capture. The host accepted
+GLDMA, GLDMA2, Vulkan and VulkanNativeSwapchain disable flags and selected
+SwiftShader. The guest still hit the same mapper.ranchu.so
+hasReadColorBufferDma assertion and BuildId as L23/L24. Astra/medium compared
+the saved evidence on September15 and found no distinct corrective flag justified
+by those logs. The case stays in fleet-matrix.json with enabled=false.
+
+Evidence: artifacts/fleet-start-20260914-230256/fleet_api37_angle and
+artifacts/fleet-sweep-20260914-225823/summary.json. A new physical/runtime setup
+remains untested; this is not a universal incompatibility claim.
 
 ## Docker/WSL Android Without KVM
 

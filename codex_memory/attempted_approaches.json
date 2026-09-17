@@ -239,20 +239,36 @@
       "failure_reason": "Both measured configurations fail display stability; boot marker is insufficient",
       "alternative": "New renderer/image evidence or prepared Android guest on actual Proxmox host",
       "source": "experiments/EXPERIMENT_LOG.md"
+    },
+    {
+      "id": "F02",
+      "name": "api37_swangle_display_failure",
+      "status": "FAILED",
+      "date": "2026-09-14",
+      "approach": "API37 Play revision6 with swangle and GLDMA/GLDMA2/Vulkan/VulkanNativeSwapchain disabled",
+      "result": "Booted but no PNG; same mapper.ranchu.so hasReadColorBufferDma assertion as L23/L24",
+      "match_terms": ["api37 swangle", "api 37 swangle", "fleet_api37_angle"],
+      "retry_allowed": false,
+      "failure_reason": "Accepted host overrides and confirmed SwiftShader rendering did not repair guest display readback",
+      "alternative": "Use a different Android platform; user stopped Google emulator permutations on 2026-09-15. Require new renderer/image/runtime evidence before another API37 attempt",
+      "source": "experiments/EXPERIMENT_LOG.md"
     }
   ],
   "patterns": {
     "android_api": {
       "working_for_launch_only": [
+        35,
         36
       ],
       "failing": [
         "34-arm64-translation",
         "36.1-display",
         "37-auto-host-boot",
-        "37-software-display"
+        "37-software-display",
+        "37-swangle-display"
       ],
       "unverified_for_login": [
+        35,
         36,
         37
       ]

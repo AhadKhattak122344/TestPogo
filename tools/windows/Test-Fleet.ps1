@@ -2,12 +2,13 @@ $ErrorActionPreference = 'Stop'
 . (Join-Path $PSScriptRoot 'Fleet-Common.ps1')
 $repo = Get-FleetRepoRoot
 $matrix = Get-FleetMatrix -Path (Join-Path $repo 'config/fleet-matrix.json')
-$enabled = @(Select-FleetAvds -Matrix $matrix)
-if ($enabled.Count -ne 3 -or $enabled[0] -is [array]) { throw 'Fleet selection is nested or has wrong enabled count' }
-$one = @(Select-FleetAvds -Matrix $matrix -Only @('fleet_api35_pixel8'))
+$rejected = $false
+try { Select-FleetAvds -Matrix $matrix | Out-Null } catch { $rejected = $_.Exception.Message -like 'No AVDs match*' }
+if (-not $rejected) { throw 'Default fleet must remain paused after the platform switch' }
+$one = @(Select-FleetAvds -Matrix $matrix -Only @('fleet_api35_pixel8') -IncludeDisabled)
 if ($one.Count -ne 1 -or $one[0].serial -ne 'emulator-5562') { throw 'Single selection failed' }
 $all = @(Select-FleetAvds -Matrix $matrix -IncludeDisabled)
-if ($all.Count -ne 4) { throw 'Disabled selection failed' }
+if ($all.Count -ne 4 -or $all[0] -is [array]) { throw 'Disabled selection failed or nested rows' }
 $scratch = New-FleetArtifactDir -Name 'fleet-host-tests'
 $rowsPath = Join-Path $scratch 'rows.json'
 foreach ($json in @('[]','[{"pid":1}]','[{"pid":1},{"pid":2}]')) {
@@ -37,6 +38,10 @@ Push-Location $scratch
 try {
     foreach ($scriptName in @('New-FleetAvds.ps1','Start-Fleet.ps1','Stop-Fleet.ps1','Install-FleetGame.ps1','Run-FleetTests.ps1')) {
         $probe = Invoke-FleetNative -Exe $psExe -Arguments @('-NoProfile','-ExecutionPolicy','Bypass','-File',(Join-Path $PSScriptRoot $scriptName),'-DryRun')
+        if ($scriptName -in @('New-FleetAvds.ps1','Start-Fleet.ps1','Run-FleetTests.ps1')) {
+            if ($probe.ExitCode -eq 0 -or $probe.Output -notmatch 'No AVDs match') { throw "Paused default matrix did not block ${scriptName}: $($probe.Output)" }
+            continue
+        }
         if ($probe.ExitCode -ne 0) { throw "Default path regression in ${scriptName}: $($probe.Output)" }
         $plan = $probe.Output | ConvertFrom-Json
         $resolved = if ($plan.action -eq 'game') { $plan.summary } else { $plan.matrix }

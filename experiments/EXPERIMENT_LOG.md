@@ -532,3 +532,87 @@ behavior. See the F03/C01 investigation note for the unresolved sign-in limitati
   this is also a changed host launch flag, not a single-variable guest experiment.
   GPU preflight now rejects unsupported modes. Fixed PS5.1 JSON array nesting so
   the runner recognizes owned launches and the installer matches individual AVDs.
+
+### F02 completed sweep (reviewed 2026-09-15 EDT)
+
+- Command: powershell -NoProfile -ExecutionPolicy Bypass -File
+  tools/windows/Run-FleetTests.ps1 -TimeoutSeconds 180 -ObserveSeconds 30.
+  Sweep exit1 because API37 failed; all stage exit codes retained in
+  artifacts/fleet-sweep-20260914-225823/summary.json. Parent log/exit:
+  artifacts/fleet-auto-20260914/{sweep.log,sweep-exit.txt}.
+- API35 emulator-5562: create/start/install/stop all exit0. Pokemon GO0.427.0
+  installed and foregrounded, three PNG samples, same PID3607, no new target
+  native signals. Visual sample03 is the birth-date form, not login success.
+  Game evidence: artifacts/fleet-game-20260914-225922/fleet_api35_pixel8.
+- API36 emulator-5564: create/start/install/stop all exit0, three PNG samples,
+  same PID4072, foreground true, no new target native signals. Visual sample03
+  still shows the anniversary splash. Game evidence:
+  artifacts/fleet-game-20260914-230123/fleet_api36_pixel9. It has not proved
+  onboarding completion, authentication or a playable map.
+- API37 emulator-5566: swangle booted but display_failed, no valid PNG,
+  SurfaceFlinger hasReadColorBufferDma assertion. No game test. Start exit1,
+  name-checked stop exit0; evidence artifacts/fleet-start-20260914-230256.
+- Astra/medium read-only review: same mapper.ranchu.so assertion, function offset
+  and BuildId as L23/L24. Host confirms swangle/SwiftShader and accepted disabled
+  feature controls. No distinct evidence-backed corrective flag identified.
+  API36.1 shared-slots failure is not an API37 test; do not conflate their history.
+- All emulator/qemu processes were absent at resumption. Original baseline AVDs
+  and accounts remain untouched. API35 birth date requested from the user before
+  any onboarding submission; no date was invented or account added.
+
+## F03 / 2026-09-15 EDT - longer API36 startup observation
+
+- Hypothesis: API36's 30-second foreground splash may advance with a longer
+  observation. Change only requested observation duration to120 seconds; retain
+  its existing AVD/image, auto GPU, installed0.427.0 and sequential cold startup.
+- Tool improvement: runner now requires a matching process_running JSON result
+  before accepting game command exit0; empty/mismatched reports fail explicitly.
+  Stop command errors also fail the case. Updated six-case mocked regression
+  passes; artifacts/fleet-auto-20260915/runner-tests.log. No device proof from mocks.
+- Command planned: powershell -NoProfile -ExecutionPolicy Bypass -File
+  tools/windows/Run-FleetTests.ps1 -Only fleet_api36_pixel9 -TimeoutSeconds 180
+  -ObserveSeconds 120. Capture before/after images and crash evidence; no account
+  or birth-date submission. Completed as recorded below; result is exit1 with
+  partial observation after ADB went offline.
+
+### F03 completed (2026-09-15 EDT)
+
+- Executed the planned command; exit1. Evidence: `artifacts/fleet-auto-20260915/{api36-long.log,api36-long-exit.txt}`, `artifacts/fleet-sweep-20260915-085154/summary.json`.
+- create0/start0/game1/stop0. Game observation captured 10 valid PNGs from 11 attempts before ADB went offline; status `observation_partial`. Evidence: `artifacts/fleet-game-20260915-085305/fleet_api36_pixel9`. Sample08 showed Google's blank Email/phone screen.
+- No account or birth-date submission. Authentication/map remain unverified. End crash evidence unavailable due ADB offline; do not claim crash absence. No emulator/qemu processes remained on last check.
+- User rejects repeating Google/Pixel API permutations after the same result and token cost. Disable fleet-matrix cases by default while preserving configs/data. The lead selected MuMuPlayer as a bounded different-runtime candidate; installation and first launch are the next actions. Do not repeat AVD flag permutations or promise compatibility without evidence.
+
+### F04 cancelled / not run (2026-09-15 EDT)
+
+- API35 headless support was added, but the planned test was cancelled after the user's direction to stop the permutation loop. No command or validation result is claimed.
+
+## F05 / 2026-09-15 EDT - install a different Android runtime
+
+- User requested a different runtime, explicitly authorizing finding and installing/downloading one. Changed platform from Google Emulator to MuMuPlayer; this changes the engine, image and graphics implementation together, not one isolated renderer variable.
+- Selection: MuMu's official game page lists Pokemon GO, but this is vendor marketing and not verified login evidence. BlueStacks' current game page marks it non-compatible. Sources: https://www.mumuplayer.com/games/pok-mon-go-on-pc.html and https://www.bluestacks.com/apps/adventure/pokemon-go-on-pc.html . No game success is claimed on either platform.
+- Host inventory: Windows11 Home x64, Ryzen5 5600G, approximately28GiB RAM, virtualization and Hyper-V present, approximately492GiB free on C. No other runtime found in the registry/common paths checked; Proxmox still uses placeholder configuration.
+- Download: curl.exe --location --fail --max-time 600 --silent --show-error --output artifacts/runtime-switch-20260915/MuMuPlayer-installer.exe https://api.mumuplayer.com/api/dl/win?channel=gw-download-win . Exit0, 6,102,432 bytes, valid NetEase signature. SHA256 B9011C9B644C6A876B54DCC8F1B678B3B5FD1670FA813E40F683ED785BE699AF. Bootstrap download version6.0.2 differs from installed product6.7.1.0.
+- Action: Start-Process -FilePath artifacts/runtime-switch-20260915/MuMuPlayer-installer.exe -WindowStyle Normal -PassThru. Installer downloaded NXMAIN and MUMU15 components; both commit stages exited0 and installer logged completion at09:12:31. Installed under C:\Program Files\Netease\MuMuPlayer. No agent UI clicks occurred; desktop-control helper was unavailable. A subsequent CLI inspection was initially rejected by automatic approval review due usage limit; it succeeded after the user's later explicit run/install request.
+- Evidence: artifacts/runtime-switch-20260915/{host-inventory.json,download-result.txt,download-exit.txt,installer-provenance.json,installer-launch.json,installer.log,manager-version.txt}. All prior AVD data/components retained; all default fleet cases disabled.
+- Host validation after fleet changes: uv sync --extra test --offline, installed CLI help,134pytest, Test-Profiles/Test-Fleet/Test-FleetRunner,280archive hashes/32docs/15CLI paths passed. Logs and exits: artifacts/fleet-auto-20260915. These are not MuMu game tests.
+
+## F06 / 2026-09-15 EDT - run MuMu and install Magisk app
+
+- User requested Magisk installation and a running emulator. Selected existing MuMu instance0 (Android15), leaving Google AVDs stopped. Android must be running to install an APK.
+- Commands (manager = C:\Program Files\Netease\MuMuPlayer\nx_main\MuMuManager.exe): info --vmindex all; control --vmindex 0 launch; info --vmindex 0. Launch exit0; boot completed with is_android_started=true, error_code=0, Hyper-V enabled, ADB127.0.0.1:16384.
+- APK: assets/magisk-v30.7.apk, official topjohnwu release URL recorded in assets/manifest.json. Local SHA256 matched E0D32D2123532860F97123D927B1BB86C4E08E6FD8A48BFC6B5BEE0AFAE9EBD5.
+- Install command: manager control --vmindex 0 app install --apk <absolute repo path>\assets\magisk-v30.7.apk. Exit0, package com.topjohnwu.magisk.
+- Verification using bundled nx_main\adb.exe: connect 127.0.0.1:16384; -s 127.0.0.1:16384 shell dumpsys package com.topjohnwu.magisk. Android reports versionName30.7, versionCode30700, installed=true. Resolved activity com.topjohnwu.magisk/.ui.MainActivity; am start -W -n that component exited0. manager control --vmindex 0 show_window requested the visible emulator window.
+- A valid PNG was captured using Save-FleetScreenshot. Visual result: Android file picker with Magisk prompt to select a raw image/ODIN tar/payload.bin. No agent selected/patched an image. This verifies APK installation and guest display, not completed Magisk root installation or Pokemon GO compatibility. Leave MuMu running as requested.
+- Evidence: artifacts/runtime-switch-20260915/{mumu-launch-result.json,mumu-boot-info.json,magisk-install-result.json,adb-connect-result.json,magisk-package-result.json,magisk-component.json,magisk-launch-result.json,mumu-show-result.json,magisk-running.png,magisk-window.txt}.
+- Next decision: do not call app installation root integration; any subsequent root work must use the actual MuMu image/boot layout and preserve a recoverable instance. No further game or image-patching experiment was performed in this run.
+
+## F07 / 2026-09-15 EDT - diagnose Magisk Install buttons
+
+- User reports repeatedly trying both Install actions without completion and asks to configure Magisk. Read-only diagnosis; no changed guest variable or additional installation attempt.
+- Decisive vendor source: [MuMu Android upgrade guide](https://www.mumuplayer.com/help/win/how-to-upgrade-mumuplayer.html), dated July3,2026, explicitly lists Magisk as unsupported on Android15. [Magisk installation documentation](https://topjohnwu.github.io/Magisk/install.html) distinguishes the APK from patching/installing its boot integration. This is a documented support limitation, not proof that every unofficial integration is impossible.
+- Exact manager commands, using installed nx_main/MuMuManager.exe: info --vmindex 0; setting --help; setting --vmindex 0 --all --info; setting --vmindex 0 --key root_permission --key system_disk_readonly. All manager reads exited0. Instance0 running Android15; root_permission=false; system_disk_readonly=true. The advertised root_permission setting is writable, but enabling MuMu root is not Magisk installation.
+- Bundled adb, selected serial127.0.0.1:16384, probed id, getprop ro.build.version.release, command -v su, command -v magisk, and conventional by-name boot directories. Observed uid2000(shell), Android15, no su/magisk path returned. Combined probe exits1 from absent/unavailable paths; this unprivileged check does not prove all possible boot devices are absent. No root command, disk patch or configuration mutation performed.
+- Valid PNG shows Magisk Logs, with Google provider/Phenotype API messages. These logs do not establish a remedy for unsupported Magisk boot integration. No cache clearing or GMS changes attempted.
+- Evidence: artifacts/mumu-magisk-20260915/{instance.json,settings-help.json,settings-inventory.json,root-settings-current.json,boot-root-inventory.json,current.png}.
+- Outcome: APK remains installed and MuMu remains running; supported Magisk integration cannot be completed on this selected Android15 runtime. Asked whether user needs root access alone or specifically Magisk/modules before substituting another root implementation. Avoid repeated Install clicks or guessed boot images.

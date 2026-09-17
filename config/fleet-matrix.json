@@ -12,25 +12,28 @@
   "avds": [
     {
       "name": "fleet_api35_pixel8",
+      "enabled": false,
       "port": 5562,
       "image": "system-images;android-35;google_apis_playstore;x86_64",
       "device": ["pixel_8", "pixel_7", "pixel_6"],
       "displayName": "Pixel 8",
       "gpu": "auto",
-      "reason": "Untested API gap between API34 (ndk_translation SIGILL) and API36 (game opens). Newer translation layer than API34."
+      "reason": "F02 installed and launched to birth-date setup; authentication unverified. Disabled after user stopped Google emulator permutations on 2026-09-15; preserve evidence and use a different Android platform next."
     },
     {
       "name": "fleet_api36_pixel9",
+      "enabled": false,
       "port": 5564,
       "image": "system-images;android-36;google_apis_playstore;x86_64",
       "device": ["pixel_9", "pixel_8_pro", "pixel_8", "pixel_7", "pixel_6"],
       "displayName": "Pixel 9",
       "ramMb": 4096,
       "gpu": "auto",
-      "reason": "Same image that opens the game on poke_api36_test. Fresh AVD with Pixel profile + PlayStore.enabled to see whether certification/sign-in depends on the AVD profile rather than the image."
+      "reason": "F02 launch passed; F03 longer observation reached Google sign-in then ADB went offline, leaving authentication unverified. Disabled after user stopped Google emulator permutations on 2026-09-15."
     },
     {
       "name": "fleet_api37_angle",
+      "enabled": false,
       "port": 5566,
       "image": "system-images;android-37.0;google_apis_playstore;x86_64",
       "device": ["pixel_9", "pixel_8", "pixel_7", "pixel_6"],
@@ -38,7 +41,7 @@
       "ramMb": 4096,
       "gpu": "swangle",
       "features": ["-GLDMA", "-GLDMA2", "-Vulkan", "-VulkanNativeSwapchain"],
-      "reason": "Supported ANGLE/SwiftShader backend with DMA/Vulkan features off. The original angle_indirect request was rejected by emulator37.1.11 and fell back to auto; this corrected mode is a separate exploratory renderer case."
+      "reason": "F02 failed display validation with swangle and these accepted feature overrides: same SurfaceFlinger hasReadColorBufferDma assertion and no PNG. Retained for diagnosis; disabled in routine sweeps until new runtime/image evidence justifies another attempt."
     },
     {
       "name": "fleet_api33_pixel7",

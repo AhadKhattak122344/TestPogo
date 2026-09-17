@@ -11,6 +11,7 @@ param(
     [ValidateRange(1,3000)][int]$TimeoutSeconds = 180,
     [ValidateRange(1,600)][int]$ObserveSeconds = 30,
     [switch]$InstallImages,
+    [switch]$Headless,
     [switch]$DryRun
 )
 Set-StrictMode -Version Latest
@@ -22,7 +23,7 @@ if (-not $ApkDir) { $ApkDir = Join-Path $repo 'artifacts/pgo-apk' }
 $Matrix = (Resolve-Path -LiteralPath $Matrix).Path
 $targets = @(Select-FleetAvds -Matrix (Get-FleetMatrix -Path $Matrix) -Only $Only)
 if ($DryRun) {
-    [pscustomobject]@{ action='sweep'; matrix=$Matrix; apkDir=$ApkDir; names=@($targets.name); stages=@('create','boot/display','game observation','stop'); authentication='unverified' } | ConvertTo-Json -Depth 5
+    [pscustomobject]@{ action='sweep'; matrix=$Matrix; apkDir=$ApkDir; names=@($targets.name); headless=[bool]$Headless; stages=@('create','boot/display','game observation','stop'); authentication='unverified' } | ConvertTo-Json -Depth 5
     return
 }
 if (-not (Test-Path -LiteralPath $ApkDir) -or -not @(Get-ChildItem -LiteralPath $ApkDir -Filter '*.apk').Count) { throw "APK set missing: $ApkDir" }
@@ -50,7 +51,7 @@ foreach ($target in $targets) {
     $caseDir = Join-Path $outDir $target.name
     New-Item -ItemType Directory -Path $caseDir | Out-Null
     $bootSummary = Join-Path $caseDir 'boot.json'
-    $case = [ordered]@{ name=$target.name; serial=$target.serial; image=$target.image; gpu=$target.gpu; features=@($target.features); status='pending'; createExit=$null; startExit=$null; gameExit=$null; stopExit=$null; boot=@(); game=@(); authentication='unverified'; artifacts=$caseDir; error='' }
+    $case = [ordered]@{ name=$target.name; serial=$target.serial; image=$target.image; gpu=$target.gpu; headless=[bool]$Headless; features=@($target.features); status='pending'; createExit=$null; startExit=$null; gameExit=$null; stopExit=$null; boot=@(); game=@(); authentication='unverified'; artifacts=$caseDir; error='' }
     $ownsLaunch = $false
     try {
         Write-Host "Testing $($target.name)"
@@ -59,7 +60,9 @@ foreach ($target in $targets) {
         $created = Invoke-TestStage 'New-FleetAvds.ps1' $createArgs (Join-Path $caseDir 'create.log') 3600
         $case.createExit = $created.ExitCode
         if ($created.ExitCode -ne 0) { $case.status='create_failed'; continue }
-        $started = Invoke-TestStage 'Start-Fleet.ps1' @('-Matrix',$Matrix,'-Only',$target.name,'-SummaryPath',$bootSummary,'-MaxParallel','1','-ColdBoot','-TimeoutSeconds',"$TimeoutSeconds",'-SettleSeconds','15') (Join-Path $caseDir 'start.log') ($TimeoutSeconds + 300)
+        $startArgs = @('-Matrix',$Matrix,'-Only',$target.name,'-SummaryPath',$bootSummary,'-MaxParallel','1','-ColdBoot','-TimeoutSeconds',"$TimeoutSeconds",'-SettleSeconds','15')
+        if ($Headless) { $startArgs += '-Headless' }
+        $started = Invoke-TestStage 'Start-Fleet.ps1' $startArgs (Join-Path $caseDir 'start.log') ($TimeoutSeconds + 300)
         $case.startExit = $started.ExitCode
         if (Test-Path -LiteralPath $bootSummary) {
             $case.boot = @(Read-FleetJsonRows -Path $bootSummary)
@@ -72,7 +75,11 @@ foreach ($target in $targets) {
         if (Test-Path -LiteralPath $latestGame) {
             $case.game = @(Read-FleetJsonRows -Path $latestGame | Where-Object serial -eq $target.serial)
         }
-        $case.status = if ($game.ExitCode -eq 0) { 'launch_observed' } else { 'game_test_failed' }
+        if ($game.ExitCode -ne 0) { $case.status='game_test_failed' }
+        elseif ($case.game.Count -ne 1 -or $case.game[0].status -ne 'process_running') {
+            $case.status='invalid_game_report'; $case.error='Successful command did not produce one matching process_running report.'
+        }
+        else { $case.status='launch_observed' }
     } catch {
         $case.status='harness_error'; $case.error=$_.Exception.Message
     } finally {
@@ -80,6 +87,7 @@ foreach ($target in $targets) {
             try {
                 $stopped = Invoke-TestStage 'Stop-Fleet.ps1' @('-Matrix',$Matrix,'-Only',$target.name) (Join-Path $caseDir 'stop.log') 90
                 $case.stopExit = $stopped.ExitCode
+                if ($stopped.ExitCode -ne 0) { $case.status='cleanup_failed'; $case.error += ' Stop command failed.' }
                 $deadline = (Get-Date).AddSeconds(20)
                 do {
                     $deviceState = Get-FleetAdbState -Adb $sdk.Adb -Serial $target.serial -TimeoutSeconds 5

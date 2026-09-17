@@ -101,7 +101,10 @@ moving its listed destination back to its former path after checking that the
 former path has not since been recreated. Python packaging may regenerate
 `*.egg-info`; new scratch/output should go under `artifacts/tmp` or `artifacts/dist`.
 
-The prior fleet run stopped at a host-side default-path error in New-FleetAvds;
-creation exited 1 before a fleet AVD was created. Its scripts, input backups,
-test logs, and downloaded API35 image remain available. Further fleet runtime
-testing was paused when this cleanup was requested; no passing fleet run is claimed.
+The fleet work resumed after cleanup. Its default-path and launcher defects were
+fixed; the automatic runner subsequently passed display/install/launch checks on
+API35 and API36. API36's longer observation then lost ADB connectivity; no login
+was verified. API37 still fails display acceptance. All default fleet cases are
+now disabled following the user's direction to switch Android platforms.
+Read [fleet usage](FLEET.md) and the latest experiment ledger for current
+results. Prior failed-run logs and all component downloads remain preserved.
