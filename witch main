@@ -1,0 +1,13 @@
+[33m546d814[m[33m ([m[1;32minternal-fisher[m[33m)[m PROVIDER: Error 12 investigation — GPS JoyStick altitude defect proven
+[33m066c5b1[m[33m ([m[1;32mclean-repo[m[33m)[m Clean and restructure repository around current Android Cloud Lab workflow
+[33ma16ffda[m[33m ([m[1;36mHEAD[m[33m -> [m[1;32mmain[m[33m)[m Save current MuMu root and automation setup
+[33ma5ccf9c[m[33m ([m[1;31morigin/main[m[33m, [m[1;31morigin/HEAD[m[33m, [m[1;32mroot-mumu-device[m[33m, [m[1;32moccipital-fireplant[m[33m, [m[1;32mlocation-provider[m[33m, [m[1;32mlinen-billboard[m[33m, [m[1;32mfoggy-repair[m[33m, [m[1;32mchecker-crocus[m[33m, [m[1;32magent3[m[33m, [m[1;32magent2[m[33m, [m[1;32magent1[m[33m, [m[1;32magent-4[m[33m)[m Save latest project changes
+[33m06b7bef[m refactor: migrate android lab package and consolidate experiment history
+[33m4972269[m[33m ([m[1;33mtag: [m[1;33mcheckpoint/layout-before-android-lab-20260909[m[33m)[m docs: record verified local Android setup and mandatory harness use
+[33ma9c66d0[m chore: add bounded Codex model-routing harness
+[33m4da0374[m refactor: implement handoff requirements and reorganize project
+[33m7dcca9d[m[33m ([m[1;31morigin/android-16-vm-orchestration-ee5cd[m[33m)[m Complete Android virtualization lab with Proxmox client, ADB manager, and full test suite
+[33maacebfc[m[33m ([m[1;31morigin/android-14-emulator-setup-5620d[m[33m)[m Title: Update .gitignore with comprehensive ignore patterns and remove database entries
+[33md346fdd[m Refine Android fleet project structure removing obsolete files and organizing into clean folder hierarchy with proper component separation
+[33mcbc1d35[m Remove RegiBot app and keep generic Android 14 emulator lab
+[33m35d9998[m Import restored Android project, models, build tools, and cloud lab

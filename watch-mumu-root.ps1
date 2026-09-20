@@ -34,6 +34,7 @@ function Wait-MuMuExit {
 }
 
 function Run-RootOnce {
+<<<<<<< ours
     $opOwned = $false
     $opMutex = New-Object System.Threading.Mutex($false, $operationMutexName, [ref]$opOwned)
     if ($opOwned) {
@@ -44,6 +45,22 @@ function Run-RootOnce {
             $opMutex.ReleaseMutex()
             $opMutex.Dispose()
         }
+=======
+    $createdNew = $false
+    $opMutex = New-Object System.Threading.Mutex($true, $operationMutexName, [ref]$createdNew)
+    $hasLock = $false
+    try {
+        if ($createdNew -or $opMutex.WaitOne(0)) {
+            $hasLock = $true
+            & $rootScript
+        }
+    } catch {
+    } finally {
+        if ($hasLock) {
+            $opMutex.ReleaseMutex()
+        }
+        $opMutex.Dispose()
+>>>>>>> theirs
     }
 }
 

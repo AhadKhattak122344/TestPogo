@@ -1,3 +1,4 @@
+<<<<<<< ours
 # MuMu API 35 Magisk Root Procedure
 
 Last verified: 2026-09-17
@@ -228,3 +229,90 @@ Inspect the checker UI or capture a screenshot and confirm that it reports root 
 - The proven repair above is a live Magisk setup. Verify it after every reboot; do not call root persistent unless a cold-boot test proves persistence.
 - Do not repeatedly run `adb root`, repeatedly restart MuMu, or repeatedly reinstall Magisk.
 - If the live setup fails, capture its exact output and diagnose that failure before trying anything else.
+=======
+# Working root method for MuMu Player
+
+## Summary
+
+MuMu Player can be rooted using the Magisk v30.7 live setup workflow.
+The proven verification command is:
+
+```
+adb shell "su -c id"
+```
+
+A successful result contains:
+
+```
+uid=0(root) ... context=u:r:magisk:s0
+```
+
+Magisk version reports as approximately `30.7:MAGISK:R`.
+
+## Do NOT use
+
+```
+adb shell id
+```
+
+This checks the ADB shell UID, which may not be root even when
+`su -c id` works correctly. The device shell may not be root while
+the `su` binary is available and functional.
+
+## Prerequisites
+
+- MuMu Player installed (Android 15 / API 35 / x86_64)
+- ADB configured and connected to the MuMu device (serial: emulator-5554)
+- MuMu Manager at: `C:\Program Files\Netease\MuMuPlayer\nx_main\MuMuManager.exe`
+- Required assets (not in repository, must be supplied):
+  - `assets/magisk-v30.7.apk` — Magisk v30.7 APK
+  - `.tools/magisk-source/` — Magisk source tree including `scripts/live_setup.sh`
+  - `lib/x86_64/libbusybox.so` — BusyBox binary extracted from the APK
+
+## Root Workflow
+
+1. Check ADB is available and device is connected
+2. Run `adb shell "su -c id"`
+3. If `uid=0(root)` is returned, the device is rooted — stop
+4. If root is not active:
+   a. Enable MuMu root permission setting
+   b. Restart MuMu if necessary
+   c. Wait for ADB to become ready again
+   d. Stage the live Magisk setup (`.tools/magisk-source/scripts/live_setup.sh`)
+   e. Run the live setup
+   f. Wait for Magisk/root
+   g. Verify with `adb shell "su -c id"`
+5. Stop once root is verified
+
+## Scripts
+
+| Script | Purpose |
+|--------|---------|
+| `root-mumu.ps1` / `root-mumu.cmd` | Core root workflow (deterministic state machine) |
+| `start-mumu-root.ps1` / `start-mumu-root.cmd` | Start MuMu + root in one operation |
+| `watch-mumu-root.ps1` / `watch-mumu-root.cmd` | Watch for new MuMu sessions and root them |
+| `install-mumu-root-watcher.cmd` | Install automatic watcher via scheduled task |
+| `uninstall-mumu-root-watcher.cmd` | Remove the automatic watcher |
+
+## User Command
+
+```powershell
+powershell -NoProfile -ExecutionPolicy Bypass -File .\start-mumu-root.cmd
+```
+
+Or simply:
+
+```cmd
+.\start-mumu-root.cmd
+```
+
+## Verification
+
+After running any script, verify root with:
+
+```cmd
+adb shell "su -c id"
+```
+
+Expected output contains `uid=0(root)` and `context=u:r:magisk:s0`.
+>>>>>>> theirs

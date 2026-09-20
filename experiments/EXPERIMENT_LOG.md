@@ -616,3 +616,43 @@ behavior. See the F03/C01 investigation note for the unresolved sign-in limitati
 - Valid PNG shows Magisk Logs, with Google provider/Phenotype API messages. These logs do not establish a remedy for unsupported Magisk boot integration. No cache clearing or GMS changes attempted.
 - Evidence: artifacts/mumu-magisk-20260915/{instance.json,settings-help.json,settings-inventory.json,root-settings-current.json,boot-root-inventory.json,current.png}.
 - Outcome: APK remains installed and MuMu remains running; supported Magisk integration cannot be completed on this selected Android15 runtime. Asked whether user needs root access alone or specifically Magisk/modules before substituting another root implementation. Avoid repeated Install clicks or guessed boot images.
+
+## P01 / 2026-09-18 PROVIDER - Error 12 mock location provider investigation
+
+- Status: verified
+- Environment: emulator-5554, MuMu Player, Android 15, API 35, x86_64; GPS JoyStick v5.3.3; Magisk root working
+  (su -c id → uid=0 root u:r:magisk:s0); LOCATION: GPS JoyStick injected at NYC 40.758,-73.985
+- Hypothesis and acceptance condition: GPS JoyStick produces malformed location data
+  (absurd altitude, frozen timestamps, inconsistent settings) causing Error 12; cleaning
+  up providers and verifying with valid coordinates should confirm or disprove. Acceptance:
+  altitude < 1000m, timestamps advancing, consistent provider ownership, mock flag acknowledged.
+- Prior evidence and attempted fixes: State.md notes GPS JoyStick running on emulator-5554
+  with mock location; previous provider agent (branch foggy-repair) found altitude bug
+  coordinate-specific (Chicago broken, NYC working) and inconsistent settings
+  (mock_location_app=null, mock_location=0).
+- Exactly one changed variable: Set mock_location_app=com.theappninjas.fakegpsjoystick
+  and mock_location=1 (system settings only; no concealment modules, no mock flag hiding).
+- Command/action and exit code: adb shell settings put secure mock_location_app
+  com.theappninjas.fakegpsjoystick (exit 0); adb shell settings put secure mock_location 1
+  (exit 0); adb shell cmd location providers remove-test-provider gps (exit 0);
+  adb shell cmd location providers remove-test-provider network (exit 0);
+  adb shell am force-stop com.theappninjas.fakegpsjoystick (exit 0)
+- Expected versus observed result: Expected clean state after reset. Observed: force-stop
+  did NOT clear mock providers; device went offline briefly (adb disconnect) then
+  reconnected with clean state (all last location=null, no [mock] tags, real provider
+  owners restored). cmd location providers remove-test-provider successfully removed
+  test providers (exit 0). After restart with NYC coords: alt=13-18m (sane), timestamps
+  advance (+15s exactly), hAcc=2-5m, mock=true on all locations.
+- Evidence: local $env:LOCALAPPDATA\PokemonGoError12\status\provider.txt;
+  docs/investigations/error12_provider.md
+- Interpretation/confidence: HIGH confidence that GPS JoyStick altitude bug is
+  coordinate-specific (Chicago 41.874 → alt=41.874M m = lat×1e6; NYC 40.758 → alt=17m).
+  System settings were inconsistent (mock_location_app=null, mock_location=0) and are
+  now corrected. mock=true is inherent to addTestProvider and cannot be hidden (forbidden).
+- Revert/cleanup performed: Device lock released; GPS JoyStick left running with NYC
+  coordinates and correct system settings for VALIDATION/MUMU agents.
+- Next decision and reason a retry would add evidence: No retry needed for PROVIDER role.
+  Remaining question is whether mock=true alone triggers Error 12 (requires POGO test
+  by VALIDATION agent). If POGO still fails with sane NYC altitude, the blocker is
+  Location.isMock() detection (unfixable without forbidden concealment).
+- Model/effort: Terra/medium (read-only diagnostics + settings fix only)

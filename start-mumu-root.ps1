@@ -71,10 +71,19 @@ if ($state -eq "device") {
 Write-Output "[STEP] Ensuring root is active..."
 
 $operationMutexName = "Global\PokemonGoBot-MuMuRootOperation"
+<<<<<<< ours
 $opOwned = $false
 $mutex = New-Object System.Threading.Mutex($false, $operationMutexName, [ref]$opOwned)
 try {
     if ($opOwned) {
+=======
+$createdNew = $false
+$mutex = New-Object System.Threading.Mutex($true, $operationMutexName, [ref]$createdNew)
+$hasLock = $false
+try {
+    if ($createdNew -or $mutex.WaitOne(0)) {
+        $hasLock = $true
+>>>>>>> theirs
         & $rootScript
         $rootExitCode = $LASTEXITCODE
     } else {
@@ -83,10 +92,17 @@ try {
 } catch {
     $rootExitCode = 1
 } finally {
+<<<<<<< ours
     if ($opOwned) {
         $mutex.ReleaseMutex()
         $mutex.Dispose()
     }
+=======
+    if ($hasLock) {
+        $mutex.ReleaseMutex()
+    }
+    $mutex.Dispose()
+>>>>>>> theirs
 }
 
 $verify = ""

@@ -84,10 +84,13 @@ function Fail-Stage {
     exit 1
 }
 
+<<<<<<< ours
 # =============================================================================
 # STEP A — Basic local validation
 # =============================================================================
 
+=======
+>>>>>>> theirs
 foreach ($file in @($adb, $manager, $liveSetup, $magiskApk)) {
     if (-not (Test-Path $file)) {
         Write-Output "[FAILED] Missing required file:"
@@ -96,6 +99,7 @@ foreach ($file in @($adb, $manager, $liveSetup, $magiskApk)) {
     }
 }
 
+<<<<<<< ours
 # =============================================================================
 # STEP B — Check MuMu / ADB
 # =============================================================================
@@ -108,6 +112,15 @@ if ($LASTEXITCODE -ne 0 -or -not ($devices -match $serial)) {
 }
 
 # Wait for device to enter device state (may be offline during boot)
+=======
+$devices = & $adb devices 2>&1
+if ($LASTEXITCODE -ne 0 -or -not ($devices -match $serial)) {
+    Write-Output "[FAILED] MuMu is not connected through ADB."
+    Write-Output "Open MuMu completely and run .\root-mumu.cmd again."
+    exit 1
+}
+
+>>>>>>> theirs
 $deviceReady = $false
 $deadline = (Get-Date).AddSeconds(90)
 while ((Get-Date) -lt $deadline) {
@@ -120,6 +133,7 @@ while ((Get-Date) -lt $deadline) {
 }
 if (-not $deviceReady) {
     Write-Output "[FAILED] MuMu is not connected through ADB."
+<<<<<<< ours
     Write-Output "Open MuMu completely and run .\root-mumu.ps1 again."
     exit 1
 }
@@ -128,6 +142,12 @@ if (-not $deviceReady) {
 # STEP C — Fast root check
 # =============================================================================
 
+=======
+    Write-Output "Open MuMu completely and run .\root-mumu.cmd again."
+    exit 1
+}
+
+>>>>>>> theirs
 $rootCheck = ""
 try {
     $rootCheck = & $adb -s $serial shell "su -c id" 2>&1
@@ -145,10 +165,13 @@ if ($rootCheck -match "uid=0\(root\)") {
     exit 0
 }
 
+<<<<<<< ours
 # =============================================================================
 # STEP D — Enable MuMu root permission
 # =============================================================================
 
+=======
+>>>>>>> theirs
 $rootPermissionEnabled = $false
 try {
     $info = & $manager setting --vmindex $vmIndex --key root_permission --info 2>&1
@@ -165,10 +188,13 @@ if (-not $rootPermissionEnabled) {
     }
 }
 
+<<<<<<< ours
 # =============================================================================
 # STEP E — Restart / Wait
 # =============================================================================
 
+=======
+>>>>>>> theirs
 & $manager control --vmindex $vmIndex restart
 if ($LASTEXITCODE -ne 0) {
     Fail-Stage -Stage "RESTART" -Reason "MuMu restart failed"
@@ -184,10 +210,13 @@ if (-not (Wait-AndroidBoot)) {
 
 Start-Sleep -Seconds 3
 
+<<<<<<< ours
 # =============================================================================
 # STEP F — Check root again
 # =============================================================================
 
+=======
+>>>>>>> theirs
 if (Test-ApplicationRoot) {
     $magiskVersion = Get-MagiskVersion
     $whichSu = & $adb -s $serial shell "which su" 2>&1
@@ -213,10 +242,13 @@ if (Test-ApplicationRoot) {
     exit 0
 }
 
+<<<<<<< ours
 # =============================================================================
 # STEP G — Stage known live setup
 # =============================================================================
 
+=======
+>>>>>>> theirs
 Add-Type -AssemblyName System.IO.Compression.FileSystem -ErrorAction SilentlyContinue
 
 $busyboxTemp = Join-Path $env:TEMP "muumagisk-busybox"
@@ -244,38 +276,83 @@ if ($LASTEXITCODE -ne 0) {
 }
 
 $pushOutput = ""
+<<<<<<< ours
 try {
     $pushOutput = & $adb -s $serial push $liveSetup "/data/local/tmp/live_setup.sh" 2>&1
 } catch {
     $pushOutput = $_.Exception.Message
 }
 if ($LASTEXITCODE -ne 0) {
+=======
+$pushExitCode = 0
+try {
+    $oldEAP = $ErrorActionPreference
+    $ErrorActionPreference = "Continue"
+    $pushOutput = & $adb -s $serial push $liveSetup "/data/local/tmp/live_setup.sh" 2>&1
+    $pushExitCode = $LASTEXITCODE
+    $ErrorActionPreference = $oldEAP
+} catch {
+    $ErrorActionPreference = $oldEAP
+    $pushOutput = $_.Exception.Message
+    $pushExitCode = -1
+}
+if ($pushExitCode -ne 0) {
+>>>>>>> theirs
     Remove-Item $busyboxTemp -ErrorAction SilentlyContinue
     Fail-Stage -Stage "FILE_STAGING" -Reason "live_setup.sh push failed: $pushOutput"
 }
 
 try {
+<<<<<<< ours
     $pushOutput = & $adb -s $serial push $busyboxTemp "/data/local/tmp/busybox" 2>&1
 } catch {
     $pushOutput = $_.Exception.Message
 }
 if ($LASTEXITCODE -ne 0) {
+=======
+    $oldEAP = $ErrorActionPreference
+    $ErrorActionPreference = "Continue"
+    $pushOutput = & $adb -s $serial push $busyboxTemp "/data/local/tmp/busybox" 2>&1
+    $pushExitCode = $LASTEXITCODE
+    $ErrorActionPreference = $oldEAP
+} catch {
+    $ErrorActionPreference = $oldEAP
+    $pushOutput = $_.Exception.Message
+    $pushExitCode = -1
+}
+if ($pushExitCode -ne 0) {
+>>>>>>> theirs
     Remove-Item $busyboxTemp -ErrorAction SilentlyContinue
     Fail-Stage -Stage "FILE_STAGING" -Reason "busybox push failed: $pushOutput"
 }
 
 try {
+<<<<<<< ours
     $pushOutput = & $adb -s $serial push $magiskApk "/data/local/tmp/magisk.apk" 2>&1
 } catch {
     $pushOutput = $_.Exception.Message
 }
 if ($LASTEXITCODE -ne 0) {
+=======
+    $oldEAP = $ErrorActionPreference
+    $ErrorActionPreference = "Continue"
+    $pushOutput = & $adb -s $serial push $magiskApk "/data/local/tmp/magisk.apk" 2>&1
+    $pushExitCode = $LASTEXITCODE
+    $ErrorActionPreference = $oldEAP
+} catch {
+    $ErrorActionPreference = $oldEAP
+    $pushOutput = $_.Exception.Message
+    $pushExitCode = -1
+}
+if ($pushExitCode -ne 0) {
+>>>>>>> theirs
     Remove-Item $busyboxTemp -ErrorAction SilentlyContinue
     Fail-Stage -Stage "FILE_STAGING" -Reason "magisk.apk push failed: $pushOutput"
 }
 
 Remove-Item $busyboxTemp -ErrorAction SilentlyContinue
 
+<<<<<<< ours
 # =============================================================================
 # STEP H — Execute live root once
 # =============================================================================
@@ -289,6 +366,13 @@ try {
 # STEP I — Wait after live setup
 # =============================================================================
 
+=======
+try {
+    & $adb -s $serial shell "cd /data/local/tmp && chmod 755 live_setup.sh busybox && sh ./live_setup.sh"
+} catch {
+}
+
+>>>>>>> theirs
 if (-not (Wait-AdbDevice)) {
     Fail-Stage -Stage "POST_LIVE_SETUP_ADB" -Reason "ADB did not reconnect within 90 seconds"
 }
@@ -299,10 +383,13 @@ if (-not (Wait-AndroidBoot)) {
 
 Start-Sleep -Seconds 3
 
+<<<<<<< ours
 # =============================================================================
 # STEP J — Final verification
 # =============================================================================
 
+=======
+>>>>>>> theirs
 $whichSu = ""
 $suId = ""
 $suWhoami = ""
