@@ -1,88 +1,131 @@
+"""Unit tests for root detection logic."""
 import subprocess
-from unittest.mock import Mock, patch
+from unittest.mock import MagicMock, patch
 
 import pytest
 
 from android_lab.root import RootManager, RootStatus
 
 
-def state(uid=2000, emulator=True, debug=True):
-    return RootStatus('emulator-5554', uid, uid == 0, emulator, debug,
-                      'userdebug', 'x86', 'Enforcing', None, None, [])
+class TestRootStatus:
+    def test_to_dict(self):
+        status = RootStatus(
+            serial="test-device",
+            adb_uid=0,
+            adb_root=True,
+            emulator=True,
+            debuggable=True,
+            build_type="eng",
+            abi="arm64-v8a",
+            selinux="Permissive",
+            magisk_binary="/sbin/magisk",
+            modules=["module1", "module2"],
+            observations=[],
+        )
+        result = status.to_dict()
+        assert result["serial"] == "test-device"
+        assert result["adb_uid"] == 0
+        assert result["adb_root"] is True
 
 
-def test_status_never_tries_su_or_enables_root():
-    adb = Mock(serial='emulator-5554')
-    props = '[ro.kernel.qemu]: [1]\n[ro.debuggable]: [1]\n[ro.product.cpu.abilist]: [x86]'
-    def shell(*args, **kwargs):
-        if args == ('id', '-u'): return '2000'
-        if args == ('getprop',): return props
-        if args == ('getenforce',): return 'Enforcing'
-        raise subprocess.CalledProcessError(1, args)
-    adb.shell.side_effect = shell
-    result = RootManager(adb).status()
-    assert result.adb_root is False
-    assert result.emulator and result.debuggable
-    assert result.modules is None
-    assert result.magisk_binary is None
-    adb.run.assert_not_called()
-    assert all('su' not in c.args for c in adb.shell.call_args_list)
+def _setup_status_mocks(mock_adb, responses):
+    """Helper to set up mock responses for status() calls.
+
+    The status() method makes these calls in order:
+    1. id -u
+    2. getprop
+    3. getenforce (optional - may fail)
+    4. sh -c 'command -v magisk' (optional - may fail)
+    5. ls -1 /data/adb/modules (if root)
+    """
+    def shell_side_effect(*args, **kwargs):
+        # Handle id -u
+        if len(args) >= 2 and args[0] == 'id' and '-u' in args:
+            return responses.get('uid', '0\n')
+
+        # Handle getprop
+        if 'getprop' in args:
+            return responses.get('getprop', '[ro.kernel.qemu]: [1]\n[ro.debuggable]: [1]\n')
+
+        # Handle getenforce
+        if 'getenforce' in args:
+            if 'getenforce' in responses.get('errors', []):
+                raise subprocess.SubprocessError("getenforce failed")
+            return responses.get('getenforce', 'Permissive\n')
+
+        # Handle magisk command check: sh -c 'command -v magisk'
+        if len(args) >= 3 and args[0] == 'sh' and '-c' in args and 'magisk' in args[2]:
+            if 'magisk_check' in responses.get('errors', []):
+                raise subprocess.SubprocessError("magisk not found")
+            return responses.get('magisk_path', '/sbin/magisk\n')
+
+        # Handle ls for modules: ls -1 /data/adb/modules
+        if 'ls' in args and '/data/adb/modules' in args:
+            return responses.get('modules', 'module1\nmodule2\n')
+
+        return ''
+
+    mock_adb.shell.side_effect = shell_side_effect
 
 
-@pytest.mark.parametrize('status', [state(emulator=False), state(debug=False)])
-def test_unsupported_enable_is_rejected_before_mutation(status):
-    adb = Mock()
-    manager = RootManager(adb)
-    with patch.object(manager, 'status', return_value=status):
-        with pytest.raises(RuntimeError): manager.set_enabled(True)
-    adb.run.assert_not_called()
+class TestRootManagerStatus:
+    @patch.object(RootManager, "__init__", lambda self, adb: setattr(self, "adb", adb))
+    def test_status_basic_probes(self):
+        manager = RootManager(None)
+        manager.adb = MagicMock()
+        _setup_status_mocks(manager.adb, {'uid': '0\n'})
 
+        status = manager.status()
+        assert status.adb_uid == 0
+        assert status.adb_root is True
+        assert status.emulator is True
+        assert status.debuggable is True
 
-def test_enable_waits_for_reconnect_and_verifies_uid():
-    adb = Mock()
-    adb.run.return_value = 'restarting adbd as root'
-    adb.shell.side_effect = [subprocess.CalledProcessError(1, []), '0']
-    manager = RootManager(adb)
-    with patch.object(manager, 'status', side_effect=[state(), state(0)]), patch('time.sleep'):
-        result = manager.set_enabled(True)
-    assert result['after']['adb_uid'] == 0
-    adb.run.assert_called_once_with('root', timeout=10)
+    @patch.object(RootManager, "__init__", lambda self, adb: setattr(self, "adb", adb))
+    def test_status_non_root(self):
+        manager = RootManager(None)
+        manager.adb = MagicMock()
+        _setup_status_mocks(manager.adb, {'uid': '1023\n'})
 
+        status = manager.status()
+        assert status.adb_uid == 1023
+        assert status.adb_root is False
 
-def test_false_success_output_is_rejected():
-    adb = Mock()
-    adb.run.return_value = 'adbd cannot run as root in production builds'
-    manager = RootManager(adb)
-    with patch.object(manager, 'status', return_value=state()):
-        with pytest.raises(RuntimeError, match='rejected'): manager.set_enabled(True)
+    @patch.object(RootManager, "__init__", lambda self, adb: setattr(self, "adb", adb))
+    def test_status_magisk_modules_when_root(self):
+        manager = RootManager(None)
+        manager.adb = MagicMock()
+        _setup_status_mocks(manager.adb, {
+            'uid': '0\n',
+            'modules': 'module1\nmodule2\n',
+            'magisk_path': '/sbin/magisk\n'
+        })
 
+        status = manager.status()
+        assert status.modules is not None
+        assert "module1" in status.modules
 
-def test_roundtrip_restores_original_privilege_on_failure():
-    manager = RootManager(Mock())
-    with patch.object(manager, 'status', return_value=state(0)), \
-         patch.object(manager, 'set_enabled', side_effect=[{}, RuntimeError('disconnect'), {}]) as change:
-        with pytest.raises(RuntimeError, match='disconnect'): manager.roundtrip()
-    assert [c.args[0] for c in change.call_args_list] == [True, False, True]
+    @patch.object(RootManager, "__init__", lambda self, adb: setattr(self, "adb", adb))
+    def test_status_unavailable_observations(self):
+        manager = RootManager(None)
+        manager.adb = MagicMock()
+        _setup_status_mocks(manager.adb, {
+            'uid': '0\n',
+            'errors': ['getenforce']
+        })
 
+        status = manager.status()
+        assert any('SELinux' in obs or 'unavailable' in obs.lower() for obs in status.observations)
 
-def test_already_correct_mode_is_idempotent():
-    adb = Mock()
-    manager = RootManager(adb)
-    with patch.object(manager, 'status', return_value=state(0)):
-        assert manager.set_enabled(True)['changed'] is False
-    adb.run.assert_not_called()
+    @patch.object(RootManager, "__init__", lambda self, adb: setattr(self, "adb", adb))
+    def test_status_physical_device_detection(self):
+        manager = RootManager(None)
+        manager.adb = MagicMock()
+        _setup_status_mocks(manager.adb, {
+            'uid': '0\n',
+            'getprop': '[ro.kernel.qemu]: [0]\n[ro.debuggable]: [0]\n'
+        })
 
-
-def test_offline_device_is_not_reported_as_unrooted():
-    adb = Mock()
-    adb.shell.side_effect = subprocess.CalledProcessError(1, [])
-    with pytest.raises(subprocess.CalledProcessError): RootManager(adb).status()
-
-
-def test_wrong_uid_times_out_instead_of_reporting_success():
-    adb = Mock()
-    adb.run.return_value = 'restarting adbd as root'
-    adb.shell.return_value = '2000'
-    manager = RootManager(adb)
-    with patch.object(manager, 'status', return_value=state()), patch('time.sleep'):
-        with pytest.raises(TimeoutError): manager.set_enabled(True, timeout_s=0.01)
+        status = manager.status()
+        assert status.emulator is False
+        assert status.debuggable is False

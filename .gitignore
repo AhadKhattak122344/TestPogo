@@ -1,34 +1,49 @@
-.tools/
-artifacts/
-**/local.properties
-**/.gradle/
-**/build/
-**/__pycache__/
-**/.pytest_cache/
-**/*.egg-info/
-.env
-.codebuddy/
-.venv/
-**/.venv/
-.env.*
-!.env.example
-assets/*
-!assets/.gitkeep
-!assets/manifest.json
-**/.tmp/
-**/.uv-cache/
-**/.ruff_cache/
-**/dist/
-**/*.pyc
-**/.idea/
-**/.vscode/
-.coverage
-htmlcov/
-*.keystore
-*.jks
-*.pem
-*.key
-*.log
+```
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+build/
+develop-eggs/
+dist/
+downloads/
+eggs/
+.eggs/
+lib/
+lib64/
+parts/
+sdist/
+var/
+wheels/
+*.egg-info/
+.installed.cfg
+*.egg
 
-config/proxmox.json
-config/local*.yaml
+# Testing
+.coverage
+coverage/
+htmlcov/
+.noserc
+.pytest_cache/
+
+# Environment
+.env
+.env.local
+*.env.*
+
+# Editors
+.vscode/
+.idea/
+*.swp
+*.swo
+*.tmp
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Logs
+*.log
+```
