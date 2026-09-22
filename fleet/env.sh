@@ -1,8 +1,0 @@
-export KEYBOX_POOL_URL="https://your-pool.example/keyboxes"
-export REDIS_URL="redis://localhost:6379/0"
-export LIBVIRT_URI="qemu:///system"
-export IMAGE_DIR="/var/lib/libvirt/images"
-export TEMPLATE_DIR="/opt/fleet/templates"
-export GOLD_IMAGE="/var/lib/libvirt/images/gold.qcow2"
-export TEE_DEVICE="/dev/tee0"
-export FLEET_API="http://localhost:8000"

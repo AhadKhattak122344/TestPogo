@@ -1,34 +1,80 @@
-.tools/
-artifacts/
-**/local.properties
-**/.gradle/
-**/build/
-**/__pycache__/
-**/.pytest_cache/
-**/*.egg-info/
-.env
-.codebuddy/
+```
+# Dependencies
+node_modules/
+venv/
 .venv/
-**/.venv/
-.env.*
-!.env.example
-assets/*
-!assets/.gitkeep
-!assets/manifest.json
-**/.tmp/
-**/.uv-cache/
-**/.ruff_cache/
-**/dist/
-**/*.pyc
-**/.idea/
-**/.vscode/
-.coverage
-htmlcov/
-*.keystore
-*.jks
-*.pem
-*.key
-*.log
+__pycache__/
+.pytest_cache/
+.mypy_cache/
+dist/
+build/
+target/
+.gradle/
 
-config/proxmox.json
-config/local*.yaml
+# Logs and temp files
+*.log
+*.tmp
+*.swp
+
+# Environment
+.env
+.env.local
+*.env.*
+
+# Editors
+.vscode/
+.idea/
+
+# OS specific
+.DS_Store
+Thumbs.db
+
+# Coverage reports
+coverage/
+htmlcov/
+.coverage
+
+# Compressed files
+*.zip
+*.gz
+*.tar
+*.tgz
+*.bz2
+*.xz
+*.7z
+*.rar
+*.zst
+*.lz4
+*.lzh
+*.cab
+*.arj
+*.rpm
+*.deb
+*.Z
+*.lz
+*.lzo
+
+# Android build artifacts (from deleted files analysis)
+"build
+"download
+"archive/recovered/flat-export/build
+"archive/recovered/flat-export/download
+
+# Gradle wrapper (common Android project)
+.gradle/
+!gradle/wrapper/gradle-wrapper.jar
+
+# APK files
+*.apk
+
+# Temporary files from scripts
+*.tmp
+*.temp
+
+# IDE specific for Android development
+*.iml
+*.iws
+.idea/
+*.swp
+*~
+```
