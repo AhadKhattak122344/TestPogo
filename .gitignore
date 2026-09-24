@@ -1,9 +1,9 @@
-```
 # Python
 __pycache__/
 *.py[cod]
 *$py.class
-*.so
+
+# Distribution / packaging
 .Python
 build/
 develop-eggs/
@@ -17,33 +17,32 @@ parts/
 sdist/
 var/
 wheels/
+share/python-wheels/
 *.egg-info/
 .installed.cfg
 *.egg
+MANIFEST
 
-# Testing
-.coverage
-coverage/
-htmlcov/
-.noserc
-.pytest_cache/
-
-# Environment
+# Virtual environments
 .env
-.env.local
-*.env.*
+.venv
+env/
+venv/
+ENV/
+env.bak/
+venv.bak/
 
-# Editors
-.vscode/
+# IDEs and editors
 .idea/
+.vscode/
 *.swp
 *.swo
+*~
+
+# Logs and temporary files
+*.log
 *.tmp
 
-# OS
+# OS generated files
 .DS_Store
 Thumbs.db
-
-# Logs
-*.log
-```

@@ -1,2 +1,0 @@
-[console_scripts]
-lab = android_lab.cli:main
